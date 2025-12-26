@@ -1,4 +1,7 @@
 # Python
+dev.duckdb
+logs/
+target/
 .venv/
 __pycache__/
 *.pyc
