@@ -1,5 +1,4 @@
 # Python
-dev.duckdb
 logs/
 target/
 .venv/
@@ -20,6 +19,3 @@ dbt/logs/
 # Streamlit
 .streamlit/secrets.toml
 
-# Data artifacts
-data/**/*.parquet
-data/**/*.csv
