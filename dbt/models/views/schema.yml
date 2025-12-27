@@ -1,0 +1,28 @@
+version: 2
+
+models:
+  - name: analytics_customers
+    description: Analyst safe customer view. Only masked fields are exposed.
+  - name: analytics_accounts
+    description: Analyst safe accounts view.
+  - name: analytics_transactions
+    description: Analyst safe transactions view.
+  - name: analytics_payments
+    description: Analyst safe payments view.
+  - name: analytics_subscriptions
+    description: Analyst safe subscriptions view.
+  - name: analytics_refunds
+    description: Analyst safe refunds view.
+
+  - name: admin_customers
+    description: Admin only customer view. Exposes raw columns for dev debugging.
+  - name: admin_accounts
+    description: Admin only accounts view.
+  - name: admin_transactions
+    description: Admin only transactions view.
+  - name: admin_payments
+    description: Admin only payments view.
+  - name: admin_subscriptions
+    description: Admin only subscriptions view.
+  - name: admin_refunds
+    description: Admin only refunds view.
