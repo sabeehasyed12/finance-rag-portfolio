@@ -1,4 +1,23 @@
-# Bronze Layer Documentation ## Purpose of the Bronze Layer The Bronze layer represents the **raw ingestion boundary** of the analytics platform. Its responsibility is to: - ingest raw data exactly as received - preserve duplicates and late arriving data - apply **no business logic** - apply **no deduplication** - expose raw fields (including PII) - make ingestion behavior observable and repeatable The Bronze layer is intentionally **not clean**. It exists to provide traceability, auditability, and a stable foundation for downstream transformations. All models in this layer are: - incremental - sourced directly from raw CSV files - filtered only by ingestion metadata - schema-aligned but not semantically corrected --- ## Common Bronze Patterns ### Data Sources All Bronze models read directly from raw CSV files using DuckDB’s read_csv_auto() function. Raw files live under: data/raw/ Each Bronze model corresponds to exactly one raw file. --- ### Incremental Ingestion Strategy All Bronze models use an incremental ingestion strategy based on ingestion_date. The following macro is applied consistently across all Bronze models:
+# Bronze Layer Documentation 
+Purpose of the Bronze Layer The Bronze layer represents the **raw ingestion boundary** of the analytics platform. Its responsibility is to: 
+- ingest raw data exactly as received
+- preserve duplicates and late arriving data
+- apply **no business logic**
+- apply **no deduplication**
+- expose raw fields (including PII)
+- make ingestion behavior observable and repeatable
+
+The Bronze layer is intentionally **not clean**. It exists to provide traceability, auditability, and a stable foundation for downstream transformations. 
+All models in this layer are: 
+- incremental
+- sourced directly from raw CSV files
+- filtered only by ingestion metadata
+- schema-aligned but not semantically corrected  
+## Common Bronze Patterns 
+### Data Sources All Bronze models read directly from raw CSV files using DuckDB’s read_csv_auto() function. 
+Raw files live under: data/raw/ Each Bronze model corresponds to exactly one raw file. 
+### Incremental Ingestion Strategy All Bronze models use an incremental ingestion strategy based on ingestion_date. 
+The following macro is applied consistently across all Bronze models:
 sql
 {{ incremental_ingestion_filter("ingestion_date") }}
 
