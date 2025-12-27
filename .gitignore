@@ -11,6 +11,9 @@ __pycache__/
 # OS
 .DS_Store
 
+# Raw generated data
+data/raw/*.csv
+
 # dbt
 dbt/target/
 dbt/dbt_packages/
