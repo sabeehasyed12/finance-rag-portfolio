@@ -1,0 +1,44 @@
+version: 2
+
+models:
+  - name: gold_monthly_revenue
+    description: Monthly rollup of gold_daily_revenue. Canonical monthly revenue summary.
+    columns:
+      - name: month
+        tests:
+          - not_null
+          - unique
+
+  - name: gold_arr
+    description: ARR derived from gold_mrr as mrr * 12.
+    columns:
+      - name: month
+        tests:
+          - not_null
+          - unique
+
+  - name: gold_refund_rate
+    description: Daily refund rate computed as refunded_amount divided by paid_amount.
+    columns:
+      - name: date
+        tests:
+          - not_null
+          - unique
+
+  - name: gold_failed_payment_rate
+    description: Daily failed payment rate computed as failed_count divided by attempt_count.
+    columns:
+      - name: date
+        tests:
+          - not_null
+          - unique
+
+  - name: gold_cohort_retention
+    description: Cohort retention by months since first paid month.
+    columns:
+      - name: cohort_month
+        tests:
+          - not_null
+      - name: months_since_cohort
+        tests:
+          - not_null

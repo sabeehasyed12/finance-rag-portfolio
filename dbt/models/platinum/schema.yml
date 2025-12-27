@@ -1,0 +1,28 @@
+version: 2
+
+models:
+  - name: platinum_finance_exec_scorecard_daily
+    description: Daily finance scorecard built from Gold metrics with rolling averages and week over week change.
+    columns:
+      - name: date
+        tests:
+          - not_null
+          - unique
+
+  - name: platinum_finance_exec_scorecard_monthly
+    description: Monthly finance scorecard built from Gold monthly revenue, ARR, churn, refund metrics.
+    columns:
+      - name: month
+        tests:
+          - not_null
+          - unique
+
+  - name: platinum_anomalies_daily
+    description: Daily anomaly flags for key metrics using trailing 30 day mean and standard deviation.
+    columns:
+      - name: date
+        tests:
+          - not_null
+      - name: metric_name
+        tests:
+          - not_null
