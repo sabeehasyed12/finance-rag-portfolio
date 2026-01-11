@@ -2,13 +2,13 @@ from __future__ import annotations
 
 import json
 from dataclasses import dataclass
-from datetime import datetime
 from pathlib import Path
-from typing import Dict, Any, List
+from typing import Dict, Any, List, Optional
 
 import duckdb
 
 from src.agents.config import AgentConfig
+
 
 @dataclass
 class FinanceInsight:
@@ -19,7 +19,21 @@ class FinanceInsight:
     drivers: List[Dict[str, Any]]
     notes: List[str]
 
+
 def run(cfg: AgentConfig) -> FinanceInsight:
+    """
+    Deterministic daily finance summary.
+
+    Reads from:
+      - {cfg.gold_schema}.gold_daily_revenue
+
+    Expected columns (based on your current model output):
+      - revenue_date
+      - net_revenue
+      - gross_transaction_amount
+      - total_refunded_amount
+      - gold_loaded_at (ignored)
+    """
     con = duckdb.connect(str(cfg.duckdb_path))
 
     q = f"""
@@ -33,14 +47,14 @@ def run(cfg: AgentConfig) -> FinanceInsight:
       max(case when rn = 1 then revenue_date end) as latest_date,
       max(case when rn = 1 then net_revenue end) as latest_net,
       max(case when rn = 2 then net_revenue end) as prev_net,
-      max(case when rn = 1 then gross_revenue end) as latest_gross,
-      max(case when rn = 1 then refunded_revenue end) as latest_refunds,
-      max(case when rn = 1 then transaction_count end) as latest_txn
+      max(case when rn = 1 then gross_transaction_amount end) as latest_gross,
+      max(case when rn = 1 then total_refunded_amount end) as latest_refunds
     from (
       select *, row_number() over(order by revenue_date desc) as rn
       from d
     )
     """
+
     row = con.execute(q).fetchone()
     if row is None or row[0] is None:
         con.close()
@@ -53,14 +67,14 @@ def run(cfg: AgentConfig) -> FinanceInsight:
             notes=["gold_daily_revenue missing or empty"],
         )
 
-    latest_date, latest_net, prev_net, latest_gross, latest_refunds, latest_txn = row
-    pct_change = None
-    if prev_net and prev_net != 0:
+    latest_date, latest_net, prev_net, latest_gross, latest_refunds = row
+
+    # Compute day-over-day change on net revenue
+    pct_change: Optional[float] = None
+    if prev_net is not None and float(prev_net) != 0.0:
         pct_change = float((latest_net - prev_net) / prev_net)
 
-    drivers: List[Dict[str, Any]] = []
-    notes: List[str] = []
-
+    # Headline logic
     if pct_change is not None:
         if pct_change < -0.10:
             headline = f"Net revenue down {pct_change:.1%} versus prior day"
@@ -71,21 +85,24 @@ def run(cfg: AgentConfig) -> FinanceInsight:
     else:
         headline = "Net revenue reported, but prior day baseline missing"
 
-    refund_rate = None
-    if latest_gross and latest_gross != 0:
+    # Refund rate (amount-based)
+    refund_rate: Optional[float] = None
+    if latest_gross is not None and float(latest_gross) != 0.0:
         refund_rate = float(latest_refunds / latest_gross)
 
-    if refund_rate is not None and refund_rate > 0.05:
-        drivers.append({"driver": "Refund pressure", "detail": f"Refund rate {refund_rate:.2%} is elevated"})
-    if latest_txn is not None and latest_txn < 50:
-        drivers.append({"driver": "Low volume", "detail": f"Only {int(latest_txn)} transactions recorded"})
+    drivers: List[Dict[str, Any]] = []
+    notes: List[str] = []
 
-    key_metrics = {
+    if refund_rate is not None and refund_rate > 0.05:
+        drivers.append(
+            {"driver": "Refund pressure", "detail": f"Refund rate {refund_rate:.2%} is elevated"}
+        )
+
+    key_metrics: Dict[str, Any] = {
         "latest_date": str(latest_date),
         "net_revenue": float(latest_net),
-        "gross_revenue": float(latest_gross),
-        "refunded_revenue": float(latest_refunds),
-        "transaction_count": int(latest_txn),
+        "gross_transaction_amount": float(latest_gross),
+        "total_refunded_amount": float(latest_refunds),
         "net_revenue_change_pct": pct_change,
         "refund_rate_amount_based": refund_rate,
     }
@@ -93,7 +110,7 @@ def run(cfg: AgentConfig) -> FinanceInsight:
     con.close()
 
     status = "pass"
-    if any("elevated" in d["detail"] for d in drivers):
+    if drivers:
         status = "warn"
 
     return FinanceInsight(
@@ -104,6 +121,7 @@ def run(cfg: AgentConfig) -> FinanceInsight:
         drivers=drivers,
         notes=notes,
     )
+
 
 def write_report(cfg: AgentConfig, result: FinanceInsight) -> Path:
     cfg.reports_dir.mkdir(parents=True, exist_ok=True)
