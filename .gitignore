@@ -13,6 +13,7 @@ __pycache__/
 
 # Raw generated data
 data/raw/*.csv
+*.duckdb
 
 # dbt
 dbt/target/
@@ -21,4 +22,7 @@ dbt/logs/
 
 # Streamlit
 .streamlit/secrets.toml
+
+artifacts/
+
 
